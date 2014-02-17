@@ -1,0 +1,12 @@
+[
+{
+    "id": "tools",
+    "children": [
+        {
+            "caption": "Remote Compile",
+            "id": "remote-compile",
+            "command": "remotecompile"
+        }
+    ]
+}
+]
