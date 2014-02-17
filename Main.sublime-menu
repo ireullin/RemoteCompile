@@ -1,11 +1,12 @@
 [
 {
     "id": "tools",
-    "children": [
+    "children": 
+    [
         {
             "caption": "Remote Compile",
             "id": "remote-compile",
-            "command": "remotecompile"
+            "command": "RemoteCompile"
         }
     ]
 }
