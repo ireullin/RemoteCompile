@@ -1,6 +1,6 @@
 [
     {
         "keys": ["f5"],
-        "command": "RemoteCompile"
+        "command": "remote_compile"
     }
 ]

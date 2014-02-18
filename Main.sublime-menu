@@ -6,7 +6,7 @@
         {
             "caption": "Remote Compile",
             "id": "remote-compile",
-            "command": "RemoteCompile"
+            "command": "remote_compile"
         }
     ]
 }
