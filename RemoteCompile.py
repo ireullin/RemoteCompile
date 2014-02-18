@@ -31,9 +31,9 @@ class RemoteCompileCommand(sublime_plugin.TextCommand):
 				self.recurrenceDir(_full)	
 			else:
 				self.arrFiles.append( _full )
-	
+                
 
-	def recurrenceDir2(self):
+    def recurrenceDir2(self):
 		print "A"
 	
 	#def generateBatch(self):
