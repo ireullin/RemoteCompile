@@ -1,1 +1,1 @@
-psftp -P 1104 root@172.16.10.141 -pw Uitox!!)$ -C -b batch.tmp
+psftp -P 1104 root@172.16.10.141 -pw Uitox!!)$ -C -b batch.tmp -be
