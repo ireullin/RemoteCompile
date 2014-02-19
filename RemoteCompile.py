@@ -12,11 +12,32 @@ class RemoteCompileCommand(sublime_plugin.WindowCommand):
 
 	def run(self):
 		print "starting remote compile....."
+
+		self.running = True
+		self.status = "Remote compiling"
+
+		sublime.set_timeout(self.refreshStatus, 0)
+
 		_t = threading.Thread(target=self.runProc)
 		_t.start()
 		#_t.join()
 
-		
+
+
+	def refreshStatus(self):
+
+		if(self.running):
+			if(len(self.status)>=30):
+				self.status = "Remote compiling"
+			else:
+				self.status = self.status + "."
+
+			sublime.status_message(self.status)
+			sublime.set_timeout(self.refreshStatus, 100)
+		else:
+			sublime.status_message("Remote compile finished")			
+
+
 
 	def runProc(self):
 
@@ -66,10 +87,11 @@ class RemoteCompileCommand(sublime_plugin.WindowCommand):
 		_view.insert(_edit, 0, _buff)
 		_view.insert(_edit, 0, "====== STANDARD ERROR ======\n")
 
-
-
 		_view.end_edit(_edit)
-		sublime.status_message("finished")
+		self.running = False
+		# sublime.status_message("finished")
+
+
 
 	def sshCommand(self, cmd):
 		_cmd = "plink -ssh " + self.host + " -P " + self.port + " -l " + self.user + " -pw " + self.passwd + " cd " + self.rPath + "; " + cmd
@@ -80,6 +102,7 @@ class RemoteCompileCommand(sublime_plugin.WindowCommand):
 
 		for l in e.readlines():
 			self.arrSTDER.append(l)
+
 
 
 	def execPsftp(self):
