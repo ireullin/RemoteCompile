@@ -49,6 +49,7 @@ class RemoteCompileCommand(sublime_plugin.WindowCommand):
 
 		self.rPath = "/var/test"
 		self.lPath = "C:\\MyDocument\\git\\MyLib"
+		self.packagepath = os.path.join(sublime.packages_path(), "RemoteCompile")
 
 		self.arrSTDIN = []
 		self.arrSTDER = []
@@ -94,6 +95,8 @@ class RemoteCompileCommand(sublime_plugin.WindowCommand):
 
 
 	def sshCommand(self, cmd):
+
+		os.chdir(self.packagepath)
 		_cmd = "plink -ssh " + self.host + " -P " + self.port + " -l " + self.user + " -pw " + self.passwd + " cd " + self.rPath + "; " + cmd
 		print _cmd
 		r, w, e = popen2.popen3(_cmd)
@@ -107,6 +110,7 @@ class RemoteCompileCommand(sublime_plugin.WindowCommand):
 
 	def execPsftp(self):
 
+		os.chdir(self.packagepath)
 		_cmd = "psftp -P " + self.port + " " + self.user + "@" + self.host + " -pw " + self.passwd + " -C -b \"" + self.tmpfile.name + "\" -be"
 		r, w, e = popen2.popen3(_cmd)
 		for l in r.readlines():
@@ -147,7 +151,7 @@ class RemoteCompileCommand(sublime_plugin.WindowCommand):
 			if f=="." or f=="..":
 				continue
 
-			_fullL = lpath + "\\" + f
+			_fullL = os.path.join(lpath, f)
 			#if ignore
 				#continue
 
@@ -158,5 +162,5 @@ class RemoteCompileCommand(sublime_plugin.WindowCommand):
 
 
 		for d in _dirTmp:
-			self.recurrenceDir(	lpath + "\\" + d, rpath + "/" +d )
+			self.recurrenceDir(	os.path.join(lpath,d), rpath + "/" +d )
 
