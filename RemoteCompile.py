@@ -6,15 +6,52 @@ import tempfile
 import popen2
 import threading
 import time
+import json
+
 
 
 class RemoteCompileCommand(sublime_plugin.WindowCommand):
 
 	def run(self):
-		print "starting remote compile....."
 
+		self.lPath = self.getProjectPath()
+		if(self.lPath==""):
+			print "can't find project file"
+			return
+
+
+		_projectFileName = os.path.join(self.lPath, self.getProjectFile());
+		if(self.lPath==""):
+			print "can't find project file"
+			return
+
+		_projectfd = open(_projectFileName,"r")
+		_json = json.loads( _projectfd.read())
+		_projectfd.close()
+
+		print _json
+		return 
+
+		_projectSettings = sublime.load_settings(_projectFile)
+		_default = _projectSettings.get("remote_compile","")
+		print _default
+		return
+
+
+		self.packagepath = os.path.join(sublime.packages_path(), "RemoteCompile")
+		self.host = "172.16.10.141"
+		self.port = "1104"
+		self.user = "root"
+		self.passwd = "Uitox!!)$"
+		self.cmd = "sh ./compile.sh"
+
+		self.rPath = "/var/test"
+		
+
+		print "starting remote compile....."
 		self.running = True
 		self.status = "Remote compiling"
+
 
 		sublime.set_timeout(self.refreshStatus, 0)
 
@@ -39,17 +76,28 @@ class RemoteCompileCommand(sublime_plugin.WindowCommand):
 
 
 
+	def getProjectFile(self):
+		_files = dircache.listdir(self.lPath)
+		for f in _files:
+			_name,_ext = os.path.splitext(f)
+			if(_ext==".sublime-project"):
+				return f
+
+		return ""
+
+
+	def getProjectPath(self):
+		_f = sublime.active_window().active_view().file_name()
+		for d in sublime.active_window().folders():
+			_tmpdir = os.path.join(d)
+			if(_f.find(_tmpdir)==0):
+				return _tmpdir
+			
+		return ""
+
+
+
 	def runProc(self):
-
-		self.host = "172.16.10.141"
-		self.port = "1104"
-		self.user = "root"
-		self.passwd = "Uitox!!)$"
-		self.cmd = "sh ./compile.sh"
-
-		self.rPath = "/var/test"
-		self.lPath = "C:\\MyDocument\\git\\MyLib"
-		self.packagepath = os.path.join(sublime.packages_path(), "RemoteCompile")
 
 		self.arrSTDIN = []
 		self.arrSTDER = []
@@ -125,7 +173,7 @@ class RemoteCompileCommand(sublime_plugin.WindowCommand):
 
 	def generateBatch(self):
 	
-		self.tmpfile = tempfile.NamedTemporaryFile(mode='w', suffix='.txt', prefix='batch_', dir=self.lPath, delete=False)
+		self.tmpfile = tempfile.NamedTemporaryFile(mode='w', suffix='.txt', prefix='batch_', dir=self.packagepath, delete=False)
 		#_f = open("tmpfile.batch", "w") # for debug
 
 		for l in self.arrFiles:
