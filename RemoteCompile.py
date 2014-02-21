@@ -112,7 +112,6 @@ class RemoteCompileCommand(sublime_plugin.WindowCommand):
 		self.running = True
 		self.status = "Remote compiling"
 
-
 		sublime.set_timeout(self.refreshStatus, 0)
 
 		_t = threading.Thread(target=self.runProc)
@@ -194,7 +193,6 @@ class RemoteCompileCommand(sublime_plugin.WindowCommand):
 			self.arrSTDER.append(l)
 
 		os.unlink(self.tmpfile.name)
-
 
 
 	def generateBatch(self):
