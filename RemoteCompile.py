@@ -29,23 +29,15 @@ class RemoteCompileCommand(sublime_plugin.WindowCommand):
 		_json = json.loads( _projectfd.read())
 		_projectfd.close()
 
-		print _json
-		return 
-
-		_projectSettings = sublime.load_settings(_projectFile)
-		_default = _projectSettings.get("remote_compile","")
-		print _default
-		return
-
+		_default = _json["remote_compile"]["default"]
 
 		self.packagepath = os.path.join(sublime.packages_path(), "RemoteCompile")
-		self.host = "172.16.10.141"
-		self.port = "1104"
-		self.user = "root"
-		self.passwd = "Uitox!!)$"
-		self.cmd = "sh ./compile.sh"
-
-		self.rPath = "/var/test"
+		self.host 	= _json["remote_compile"][_default]["host"]
+		self.port 	= _json["remote_compile"][_default]["port"]
+		self.user	= _json["remote_compile"][_default]["username"]
+		self.passwd = _json["remote_compile"][_default]["password"]
+		self.cmd 	= _json["remote_compile"][_default]["cmd"]
+		self.rPath 	= _json["remote_compile"][_default]["remote_path"]
 		
 
 		print "starting remote compile....."
