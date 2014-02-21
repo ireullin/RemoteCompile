@@ -151,13 +151,13 @@ class RemoteCompileCommand(sublime_plugin.WindowCommand):
 		_edit = _view.begin_edit()
 		
 		_buff = "".join(self.arrSTDIN)
-		_view.insert(_edit, 0, _buff)
+		_view.insert(_edit, 0, _buff.decode('utf-8') )
 		_view.insert(_edit, 0, "\n")
 		_view.insert(_edit, 0, "====== STANDARD OUTPUT ======\n")
 		_view.insert(_edit, 0, "\n\n\n")
 
 		_buff = "".join(self.arrSTDER)
-		_view.insert(_edit, 0, _buff)
+		_view.insert(_edit, 0, _buff.decode('utf-8') )
 		_view.insert(_edit, 0, "\n")
 		_view.insert(_edit, 0, "====== STANDARD ERROR ======\n")
 
