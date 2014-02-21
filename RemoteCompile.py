@@ -39,6 +39,41 @@ class RemoteCompileCommand(sublime_plugin.WindowCommand):
 		return ""
 
 
+	def refreshStatus(self):
+
+		if(self.running):
+			if(len(self.status)>=30):
+				self.status = "Remote compiling"
+			else:
+				self.status = self.status + "."
+
+			sublime.status_message(self.status)
+			sublime.set_timeout(self.refreshStatus, 100)
+		else:
+			sublime.status_message("Remote compile finished")			
+
+
+
+	def getIgnoreFile(self):
+
+		_filePath = os.path.join(self.lPath, self.ignore)
+
+		if( os.path.isfile(_filePath)==False ):
+			return
+
+		_fd = open(_filePath ,"r")
+		for l in _fd:
+			if(l[0]=="*"):
+				self.arrIgnores.append( l.rstrip('\n').rstrip('\r')   )
+			else:
+				_name = os.path.join(self.lPath, l)
+				self.arrIgnores.append( _name.replace('/','\\').rstrip('\n').rstrip('\r')  )
+
+		_fd.close()
+		print self.arrIgnores
+			
+
+
 	def run(self):
 
 		self.lPath = self.getProjectPath()
@@ -57,7 +92,7 @@ class RemoteCompileCommand(sublime_plugin.WindowCommand):
 			_projectfd = open(_projectFileName,"r")
 			_json = json.loads( _projectfd.read())
 			_projectfd.close()
-		
+
 			_default	= _json["remote_compile"]["default"]
 			self.host 	= _json["remote_compile"][_default]["host"]
 			self.port 	= _json["remote_compile"][_default]["port"]
@@ -65,6 +100,7 @@ class RemoteCompileCommand(sublime_plugin.WindowCommand):
 			self.passwd = _json["remote_compile"][_default]["password"]
 			self.cmd 	= _json["remote_compile"][_default]["cmd"]
 			self.rPath 	= _json["remote_compile"][_default]["remote_path"]
+			self.ignore = _json["remote_compile"][_default]["ignore"]
 			self.packagepath = os.path.join(sublime.packages_path(), "RemoteCompile")
 
 		except:
@@ -83,32 +119,17 @@ class RemoteCompileCommand(sublime_plugin.WindowCommand):
 		_t.start()
 		#_t.join()
 
-
-
-	def refreshStatus(self):
-
-		if(self.running):
-			if(len(self.status)>=30):
-				self.status = "Remote compiling"
-			else:
-				self.status = self.status + "."
-
-			sublime.status_message(self.status)
-			sublime.set_timeout(self.refreshStatus, 100)
-		else:
-			sublime.status_message("Remote compile finished")			
-
-
-
-
+	
 
 	def runProc(self):
 
 		self.arrSTDIN = []
 		self.arrSTDER = []
 		self.arrFiles = []
+		self.arrIgnores = []
 
 		self.printMsg("uploading....")
+		self.getIgnoreFile()
 		self.recurrenceDir(self.lPath, self.rPath)
 		self.generateBatch()
 		self.execPsftp()
@@ -188,6 +209,8 @@ class RemoteCompileCommand(sublime_plugin.WindowCommand):
 
 		
 
+	
+
 
 	def recurrenceDir(self, lpath, rpath):
 		
@@ -203,8 +226,8 @@ class RemoteCompileCommand(sublime_plugin.WindowCommand):
 				continue
 
 			_fullL = os.path.join(lpath, f)
-			#if ignore
-				#continue
+			if(self.isIgnored(_fullL)):
+				continue
 
 			if os.path.isdir(_fullL):
 				_dirTmp.append(f)
@@ -215,3 +238,24 @@ class RemoteCompileCommand(sublime_plugin.WindowCommand):
 		for d in _dirTmp:
 			self.recurrenceDir(	os.path.join(lpath,d), rpath + "/" +d )
 
+
+		
+
+	def isIgnored(self, fullPath):
+		if(len(self.arrIgnores)==0):
+			return False
+
+		for l in self.arrIgnores:
+
+			if(l[0]=="*"):
+				_name1,_ext1 = os.path.splitext(l)
+				_name2,_ext2 = os.path.splitext(fullPath)
+				print _ext1 +"|"+ _ext2
+				if _ext1 == _ext2 :
+					return True
+			else:
+				print l+"|"+fullPath
+				if fullPath == l :
+					return True
+
+		return False
