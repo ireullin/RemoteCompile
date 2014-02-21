@@ -12,35 +12,67 @@ import json
 
 class RemoteCompileCommand(sublime_plugin.WindowCommand):
 
+	def printMsg(self, msg):
+		t = time.time()
+		_time = time.strftime('%H:%M:%S', time.localtime(t))
+		print "{0}  [RemoteCompile]{1}".format(_time, msg)
+
+
+
+	def getProjectFile(self):
+		_files = dircache.listdir(self.lPath)
+		for f in _files:
+			_name,_ext = os.path.splitext(f)
+			if(_ext==".sublime-project"):
+				return f
+
+		return ""
+
+
+	def getProjectPath(self):
+		_f = sublime.active_window().active_view().file_name()
+		for d in sublime.active_window().folders():
+			_tmpdir = os.path.join(d)
+			if(_f.find(_tmpdir)==0):
+				return _tmpdir
+			
+		return ""
+
+
 	def run(self):
 
 		self.lPath = self.getProjectPath()
 		if(self.lPath==""):
-			print "can't find project file"
+			self.printMsg("can't find project's path")
 			return
 
 
 		_projectFileName = os.path.join(self.lPath, self.getProjectFile());
 		if(self.lPath==""):
-			print "can't find project file"
+			self.printMsg("can't find project's file")
 			return
 
-		_projectfd = open(_projectFileName,"r")
-		_json = json.loads( _projectfd.read())
-		_projectfd.close()
 
-		_default = _json["remote_compile"]["default"]
+		try:
+			_projectfd = open(_projectFileName,"r")
+			_json = json.loads( _projectfd.read())
+			_projectfd.close()
+		
+			_default	= _json["remote_compile"]["default"]
+			self.host 	= _json["remote_compile"][_default]["host"]
+			self.port 	= _json["remote_compile"][_default]["port"]
+			self.user	= _json["remote_compile"][_default]["username"]
+			self.passwd = _json["remote_compile"][_default]["password"]
+			self.cmd 	= _json["remote_compile"][_default]["cmd"]
+			self.rPath 	= _json["remote_compile"][_default]["remote_path"]
+			self.packagepath = os.path.join(sublime.packages_path(), "RemoteCompile")
 
-		self.packagepath = os.path.join(sublime.packages_path(), "RemoteCompile")
-		self.host 	= _json["remote_compile"][_default]["host"]
-		self.port 	= _json["remote_compile"][_default]["port"]
-		self.user	= _json["remote_compile"][_default]["username"]
-		self.passwd = _json["remote_compile"][_default]["password"]
-		self.cmd 	= _json["remote_compile"][_default]["cmd"]
-		self.rPath 	= _json["remote_compile"][_default]["remote_path"]
+		except:
+			self.printMsg("setting error")
+			return
 		
 
-		print "starting remote compile....."
+		self.printMsg("starting.....")
 		self.running = True
 		self.status = "Remote compiling"
 
@@ -68,25 +100,6 @@ class RemoteCompileCommand(sublime_plugin.WindowCommand):
 
 
 
-	def getProjectFile(self):
-		_files = dircache.listdir(self.lPath)
-		for f in _files:
-			_name,_ext = os.path.splitext(f)
-			if(_ext==".sublime-project"):
-				return f
-
-		return ""
-
-
-	def getProjectPath(self):
-		_f = sublime.active_window().active_view().file_name()
-		for d in sublime.active_window().folders():
-			_tmpdir = os.path.join(d)
-			if(_f.find(_tmpdir)==0):
-				return _tmpdir
-			
-		return ""
-
 
 
 	def runProc(self):
@@ -95,17 +108,15 @@ class RemoteCompileCommand(sublime_plugin.WindowCommand):
 		self.arrSTDER = []
 		self.arrFiles = []
 
-		print "preparing files...."
+		self.printMsg("uploading....")
 		self.recurrenceDir(self.lPath, self.rPath)
-		
-		print "uploading...."
 		self.generateBatch()
 		self.execPsftp()
 		
-		print "compiling...."
+		self.printMsg("compiling....")
 		self.sshCommand( self.cmd )
 
-		print "finished"
+		self.printMsg("finished")
 		sublime.set_timeout(self.callbackResult, 0)
 		
     	
@@ -138,7 +149,7 @@ class RemoteCompileCommand(sublime_plugin.WindowCommand):
 
 		os.chdir(self.packagepath)
 		_cmd = "plink -ssh " + self.host + " -P " + self.port + " -l " + self.user + " -pw " + self.passwd + " cd " + self.rPath + "; " + cmd
-		print _cmd
+		#print _cmd
 		r, w, e = popen2.popen3(_cmd)
 		for l in r.readlines():
 			self.arrSTDIN.append(l)
