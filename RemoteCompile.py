@@ -70,7 +70,7 @@ class RemoteCompileCommand(sublime_plugin.WindowCommand):
 				self.arrIgnores.append( _name.replace('/','\\').rstrip('\n').rstrip('\r')  )
 
 		_fd.close()
-		print self.arrIgnores
+		#print self.arrIgnores
 			
 
 
@@ -78,13 +78,13 @@ class RemoteCompileCommand(sublime_plugin.WindowCommand):
 
 		self.lPath = self.getProjectPath()
 		if(self.lPath==""):
-			self.printMsg("can't find project's path")
+			self.printMsg("this file is not in the project")
 			return
 
 
 		_projectFileName = self.getProjectFile(self.lPath);
 		if(self.lPath==""):
-			self.printMsg("can't find project's file")
+			self.printMsg("can't find file project")
 			return
 
 
@@ -153,11 +153,13 @@ class RemoteCompileCommand(sublime_plugin.WindowCommand):
 		
 		_buff = "".join(self.arrSTDIN)
 		_view.insert(_edit, 0, _buff)
+		_view.insert(_edit, 0, "\n")
 		_view.insert(_edit, 0, "====== STANDARD OUTPUT ======\n")
-		_view.insert(_edit, 0, "\n\n")
+		_view.insert(_edit, 0, "\n\n\n")
 
 		_buff = "".join(self.arrSTDER)
 		_view.insert(_edit, 0, _buff)
+		_view.insert(_edit, 0, "\n")
 		_view.insert(_edit, 0, "====== STANDARD ERROR ======\n")
 
 		_view.end_edit(_edit)
@@ -250,11 +252,11 @@ class RemoteCompileCommand(sublime_plugin.WindowCommand):
 			if(l[0]=="*"):
 				_name1,_ext1 = os.path.splitext(l)
 				_name2,_ext2 = os.path.splitext(fullPath)
-				print _ext1 +"|"+ _ext2
+				#print _ext1 +"|"+ _ext2
 				if _ext1 == _ext2 :
 					return True
 			else:
-				print l+"|"+fullPath
+				#print l+"|"+fullPath
 				if fullPath == l :
 					return True
 
