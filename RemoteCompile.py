@@ -19,12 +19,12 @@ class RemoteCompileCommand(sublime_plugin.WindowCommand):
 
 
 
-	def getProjectFile(self):
-		_files = dircache.listdir(self.lPath)
+	def getProjectFile(self, path):
+		_files = dircache.listdir(path)
 		for f in _files:
 			_name,_ext = os.path.splitext(f)
 			if(_ext==".sublime-project"):
-				return f
+				return os.path.join(path, f)
 
 		return ""
 
@@ -47,7 +47,7 @@ class RemoteCompileCommand(sublime_plugin.WindowCommand):
 			return
 
 
-		_projectFileName = os.path.join(self.lPath, self.getProjectFile());
+		_projectFileName = self.getProjectFile(self.lPath);
 		if(self.lPath==""):
 			self.printMsg("can't find project's file")
 			return
@@ -199,7 +199,7 @@ class RemoteCompileCommand(sublime_plugin.WindowCommand):
 		_dirTmp = []
 		_files = dircache.listdir(lpath)
 		for f in _files:
-			if f=="." or f=="..":
+			if f[0]=="." or f=="..":
 				continue
 
 			_fullL = os.path.join(lpath, f)
