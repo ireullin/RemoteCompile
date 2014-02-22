@@ -77,6 +77,35 @@ class RemoteCompileCommand(sublime_plugin.TextCommand):
 			
 
 
+	def getFileMD5(self, filename):
+
+		_f = open(filename,"rb")
+		_md5 = hashlib.md5( _f.read() ).hexdigest()
+		_f.close()
+		return _md5
+
+
+
+	def getHashMD5(self, filename):
+		_hash = {}
+		if(os.path.isfile(filename)==False):
+			return _hash
+
+		_f = open(filename, "r")
+		for l in _f :
+			_hash[l] = ""
+
+		return _hash
+
+
+
+	def writeAll(self, filename, contant):
+		_f = open(filename,"w")
+		_f.write(contant)
+		_f.close()
+
+
+
 	def run(self, edit, **args):
 
 		self.lPath = self.getProjectPath()
@@ -135,14 +164,21 @@ class RemoteCompileCommand(sublime_plugin.TextCommand):
 		self.arrSTDER = []
 		self.arrFiles = []
 		self.arrIgnores = []
-
+		self.arrMD5 = []
+		self.hashMD5 = {}
 
 		if(self.uploading.lower()=="true"):
 			self.printMsg("uploading....")
+
+			_md5path = os.path.join( self.lPath, ".md5")
+			self.hashMD5 = self.getHashMD5(_md5path)
+
 			self.getIgnoreFile()
 			self.recurrenceDir(self.lPath, self.rPath)
 			self.generateBatch()
 			self.execPsftp()
+
+			self.writeAll( _md5path, "\n".join(self.arrMD5)  )
 
 
 		if(self.compiling.lower()=="true"):
@@ -246,7 +282,12 @@ class RemoteCompileCommand(sublime_plugin.TextCommand):
 			if os.path.isdir(_fullL):
 				_dirTmp.append(f)
 			else:
-				self.arrFiles.append( "put \"" + f + "\"" )
+				_md5 = self.getFileMD5(_fullL)
+				self.arrMD5.append( _md5 )
+				
+				if(  self.hashMD5.has_key(_md5)==True  ):
+					self.arrFiles.append( "put \"" + f + "\"" )
+				
 
 
 		for d in _dirTmp:
