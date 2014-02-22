@@ -8,12 +8,10 @@
             "id": "remote-compile",
             "children":
             [
-                {"caption": "Upload all and compile",	"command": "remote_compile"},
-                {"caption": "Upload diff and compile",	"command": ""},
-                {"caption": "Upload all",				"command": ""},
-                {"caption": "Upload deff",				"command": ""},
-                {"caption": "-"},
-                {"caption": "Generate example",			"command": "generate_example"}
+                {"caption":"Upload all and compile",	"command":"remote_compile", "args":{"uploading":"true", "compiling":"true"} },
+                {"caption":"Upload all",				"command":"remote_compile", "args":{"uploading":"true", "compiling":"false"} },
+                {"caption":"-"},
+                {"caption":"Generate example",			"command":"generate_example"}
             ]
         }
     ]

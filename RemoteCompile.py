@@ -10,12 +10,12 @@ import json
 
 
 
-class RemoteCompileCommand(sublime_plugin.WindowCommand):
+class RemoteCompileCommand(sublime_plugin.TextCommand):
 
 	def printMsg(self, msg):
 		t = time.time()
 		_time = time.strftime('%H:%M:%S', time.localtime(t))
-		print "{0}  [RemoteCompile]{1}".format(_time, msg)
+		print "{0}  [RemoteCompile] {1}".format(_time, msg)
 
 
 
@@ -74,7 +74,7 @@ class RemoteCompileCommand(sublime_plugin.WindowCommand):
 			
 
 
-	def run(self):
+	def run(self, edit, **args):
 
 		self.lPath = self.getProjectPath()
 		if(self.lPath==""):
@@ -101,7 +101,10 @@ class RemoteCompileCommand(sublime_plugin.WindowCommand):
 			self.cmd 	= _json["remote_compile"][_default]["cmd"]
 			self.rPath 	= _json["remote_compile"][_default]["remote_path"]
 			self.ignore = _json["remote_compile"][_default]["ignore"]
-			self.packagepath = os.path.join(sublime.packages_path(), "RemoteCompile")
+
+			self.compiling	= args["compiling"]
+			self.uploading	= args["uploading"]
+			self.packagepath= os.path.join(sublime.packages_path(), "RemoteCompile")
 
 		except:
 			self.printMsg("setting error")
@@ -127,25 +130,31 @@ class RemoteCompileCommand(sublime_plugin.WindowCommand):
 		self.arrFiles = []
 		self.arrIgnores = []
 
-		self.printMsg("uploading....")
-		self.getIgnoreFile()
-		self.recurrenceDir(self.lPath, self.rPath)
-		self.generateBatch()
-		self.execPsftp()
-		
-		self.printMsg("compiling....")
-		self.sshCommand( self.cmd )
+
+		if(self.uploading.lower()=="true"):
+			self.printMsg("uploading....")
+			self.getIgnoreFile()
+			self.recurrenceDir(self.lPath, self.rPath)
+			self.generateBatch()
+			self.execPsftp()
+
+
+		if(self.compiling.lower()=="true"):
+			self.printMsg("compiling....")
+			self.sshCommand( self.cmd )
+
 
 		self.printMsg("finished")
 		sublime.set_timeout(self.callbackResult, 0)
 		
-    	
+
 
 	def callbackResult(self):
 		t = time.time()
 		_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(t))
 		
-		_view = self.window.new_file()
+		#_view = self.window.new_file()
+		_view = sublime.active_window().new_file()
 		_view.set_name("compile report " + _time )
 
 		_edit = _view.begin_edit()
@@ -197,7 +206,7 @@ class RemoteCompileCommand(sublime_plugin.WindowCommand):
 
 	def generateBatch(self):
 	
-		self.tmpfile = tempfile.NamedTemporaryFile(mode='w', suffix='.txt', prefix='batch_', dir=self.packagepath, delete=False)
+		self.tmpfile = tempfile.NamedTemporaryFile(mode='w', suffix='.tmp', prefix='batch_', dir=self.packagepath, delete=False)
 		#_f = open("tmpfile.batch", "w") # for debug
 
 		for l in self.arrFiles:
@@ -208,9 +217,6 @@ class RemoteCompileCommand(sublime_plugin.WindowCommand):
 		self.tmpfile.close()
 
 		
-
-	
-
 
 	def recurrenceDir(self, lpath, rpath):
 		
@@ -259,3 +265,4 @@ class RemoteCompileCommand(sublime_plugin.WindowCommand):
 					return True
 
 		return False
+
