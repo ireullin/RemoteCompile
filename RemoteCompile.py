@@ -31,6 +31,9 @@ class RemoteCompileCommand(sublime_plugin.TextCommand):
 
 	def getProjectPath(self):
 		_f = sublime.active_window().active_view().file_name()
+		if(_f==None):
+			return ""
+			
 		for d in sublime.active_window().folders():
 			_tmpdir = os.path.join(d)
 			if(_f.find(_tmpdir)==0):
@@ -79,12 +82,14 @@ class RemoteCompileCommand(sublime_plugin.TextCommand):
 		self.lPath = self.getProjectPath()
 		if(self.lPath==""):
 			self.printMsg("this file is not in the project")
+			sublime.error_message("this file is not in the project")
 			return
 
 
 		_projectFileName = self.getProjectFile(self.lPath);
 		if(self.lPath==""):
 			self.printMsg("can't find file project")
+			sublime.error_message("can't find file project")
 			return
 
 
@@ -108,6 +113,7 @@ class RemoteCompileCommand(sublime_plugin.TextCommand):
 
 		except:
 			self.printMsg("setting error")
+			sublime.error_message("setting error")
 			return
 		
 
@@ -150,12 +156,14 @@ class RemoteCompileCommand(sublime_plugin.TextCommand):
 
 
 	def callbackResult(self):
+
 		t = time.time()
 		_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(t))
 		
 		#_view = self.window.new_file()
 		_view = sublime.active_window().new_file()
 		_view.set_name("compile report " + _time )
+
 
 		_edit = _view.begin_edit()
 		
