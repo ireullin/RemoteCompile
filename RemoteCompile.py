@@ -7,7 +7,7 @@ import popen2
 import threading
 import time
 import json
-
+import hashlib
 
 
 class RemoteCompileCommand(sublime_plugin.TextCommand):
