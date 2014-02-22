@@ -1,12 +1,20 @@
 [
 {
     "id": "tools",
-    "children": 
+    "children":
     [
-        {
+    	{
             "caption": "Remote Compile",
             "id": "remote-compile",
-            "command": "remote_compile"
+            "children":
+            [
+                {"caption": "Upload all and compile",	"command": "remote_compile"},
+                {"caption": "Upload diff and compile",	"command": ""},
+                {"caption": "Upload all",				"command": ""},
+                {"caption": "Upload deff",				"command": ""},
+                {"caption": "-"},
+                {"caption": "Generate example",			"command": "generate_example"}
+            ]
         }
     ]
 }
