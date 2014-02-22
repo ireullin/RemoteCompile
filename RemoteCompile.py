@@ -12,53 +12,31 @@ import json
 
 class RemoteCompileCommand(sublime_plugin.WindowCommand):
 
-	def run(self):
-
-		self.lPath = self.getProjectPath()
-		if(self.lPath==""):
-			print "can't find project file"
-			return
+	def printMsg(self, msg):
+		t = time.time()
+		_time = time.strftime('%H:%M:%S', time.localtime(t))
+		print "{0}  [RemoteCompile]{1}".format(_time, msg)
 
 
-		_projectFileName = os.path.join(self.lPath, self.getProjectFile());
-		if(self.lPath==""):
-			print "can't find project file"
-			return
 
-		_projectfd = open(_projectFileName,"r")
-		_json = json.loads( _projectfd.read())
-		_projectfd.close()
+	def getProjectFile(self, path):
+		_files = dircache.listdir(path)
+		for f in _files:
+			_name,_ext = os.path.splitext(f)
+			if(_ext==".sublime-project"):
+				return os.path.join(path, f)
 
-		print _json
-		return 
-
-		_projectSettings = sublime.load_settings(_projectFile)
-		_default = _projectSettings.get("remote_compile","")
-		print _default
-		return
+		return ""
 
 
-		self.packagepath = os.path.join(sublime.packages_path(), "RemoteCompile")
-		self.host = "172.16.10.141"
-		self.port = "1104"
-		self.user = "root"
-		self.passwd = "Uitox!!)$"
-		self.cmd = "sh ./compile.sh"
-
-		self.rPath = "/var/test"
-		
-
-		print "starting remote compile....."
-		self.running = True
-		self.status = "Remote compiling"
-
-
-		sublime.set_timeout(self.refreshStatus, 0)
-
-		_t = threading.Thread(target=self.runProc)
-		_t.start()
-		#_t.join()
-
+	def getProjectPath(self):
+		_f = sublime.active_window().active_view().file_name()
+		for d in sublime.active_window().folders():
+			_tmpdir = os.path.join(d)
+			if(_f.find(_tmpdir)==0):
+				return _tmpdir
+			
+		return ""
 
 
 	def refreshStatus(self):
@@ -76,44 +54,89 @@ class RemoteCompileCommand(sublime_plugin.WindowCommand):
 
 
 
-	def getProjectFile(self):
-		_files = dircache.listdir(self.lPath)
-		for f in _files:
-			_name,_ext = os.path.splitext(f)
-			if(_ext==".sublime-project"):
-				return f
+	def getIgnoreFile(self):
 
-		return ""
+		_filePath = os.path.join(self.lPath, self.ignore)
 
+		if( os.path.isfile(_filePath)==False ):
+			return
 
-	def getProjectPath(self):
-		_f = sublime.active_window().active_view().file_name()
-		for d in sublime.active_window().folders():
-			_tmpdir = os.path.join(d)
-			if(_f.find(_tmpdir)==0):
-				return _tmpdir
+		_fd = open(_filePath ,"r")
+		for l in _fd:
+			if(l[0]=="*"):
+				self.arrIgnores.append( l.rstrip('\n').rstrip('\r')   )
+			else:
+				_name = os.path.join(self.lPath, l)
+				self.arrIgnores.append( _name.replace('/','\\').rstrip('\n').rstrip('\r')  )
+
+		_fd.close()
+		#print self.arrIgnores
 			
-		return ""
 
 
+	def run(self):
+
+		self.lPath = self.getProjectPath()
+		if(self.lPath==""):
+			self.printMsg("this file is not in the project")
+			return
+
+
+		_projectFileName = self.getProjectFile(self.lPath);
+		if(self.lPath==""):
+			self.printMsg("can't find file project")
+			return
+
+
+		try:
+			_projectfd = open(_projectFileName,"r")
+			_json = json.loads( _projectfd.read())
+			_projectfd.close()
+
+			_default	= _json["remote_compile"]["default"]
+			self.host 	= _json["remote_compile"][_default]["host"]
+			self.port 	= _json["remote_compile"][_default]["port"]
+			self.user	= _json["remote_compile"][_default]["username"]
+			self.passwd = _json["remote_compile"][_default]["password"]
+			self.cmd 	= _json["remote_compile"][_default]["cmd"]
+			self.rPath 	= _json["remote_compile"][_default]["remote_path"]
+			self.ignore = _json["remote_compile"][_default]["ignore"]
+			self.packagepath = os.path.join(sublime.packages_path(), "RemoteCompile")
+
+		except:
+			self.printMsg("setting error")
+			return
+		
+
+		self.printMsg("starting.....")
+		self.running = True
+		self.status = "Remote compiling"
+
+		sublime.set_timeout(self.refreshStatus, 0)
+
+		_t = threading.Thread(target=self.runProc)
+		_t.start()
+		#_t.join()
+
+	
 
 	def runProc(self):
 
 		self.arrSTDIN = []
 		self.arrSTDER = []
 		self.arrFiles = []
+		self.arrIgnores = []
 
-		print "preparing files...."
+		self.printMsg("uploading....")
+		self.getIgnoreFile()
 		self.recurrenceDir(self.lPath, self.rPath)
-		
-		print "uploading...."
 		self.generateBatch()
 		self.execPsftp()
 		
-		print "compiling...."
+		self.printMsg("compiling....")
 		self.sshCommand( self.cmd )
 
-		print "finished"
+		self.printMsg("finished")
 		sublime.set_timeout(self.callbackResult, 0)
 		
     	
@@ -128,12 +151,14 @@ class RemoteCompileCommand(sublime_plugin.WindowCommand):
 		_edit = _view.begin_edit()
 		
 		_buff = "".join(self.arrSTDIN)
-		_view.insert(_edit, 0, _buff)
+		_view.insert(_edit, 0, _buff.decode('utf-8') )
+		_view.insert(_edit, 0, "\n")
 		_view.insert(_edit, 0, "====== STANDARD OUTPUT ======\n")
-		_view.insert(_edit, 0, "\n\n")
+		_view.insert(_edit, 0, "\n\n\n")
 
 		_buff = "".join(self.arrSTDER)
-		_view.insert(_edit, 0, _buff)
+		_view.insert(_edit, 0, _buff.decode('utf-8') )
+		_view.insert(_edit, 0, "\n")
 		_view.insert(_edit, 0, "====== STANDARD ERROR ======\n")
 
 		_view.end_edit(_edit)
@@ -146,7 +171,7 @@ class RemoteCompileCommand(sublime_plugin.WindowCommand):
 
 		os.chdir(self.packagepath)
 		_cmd = "plink -ssh " + self.host + " -P " + self.port + " -l " + self.user + " -pw " + self.passwd + " cd " + self.rPath + "; " + cmd
-		print _cmd
+		#print _cmd
 		r, w, e = popen2.popen3(_cmd)
 		for l in r.readlines():
 			self.arrSTDIN.append(l)
@@ -170,7 +195,6 @@ class RemoteCompileCommand(sublime_plugin.WindowCommand):
 		os.unlink(self.tmpfile.name)
 
 
-
 	def generateBatch(self):
 	
 		self.tmpfile = tempfile.NamedTemporaryFile(mode='w', suffix='.txt', prefix='batch_', dir=self.packagepath, delete=False)
@@ -185,6 +209,8 @@ class RemoteCompileCommand(sublime_plugin.WindowCommand):
 
 		
 
+	
+
 
 	def recurrenceDir(self, lpath, rpath):
 		
@@ -196,12 +222,12 @@ class RemoteCompileCommand(sublime_plugin.WindowCommand):
 		_dirTmp = []
 		_files = dircache.listdir(lpath)
 		for f in _files:
-			if f=="." or f=="..":
+			if f[0]=="." or f=="..":
 				continue
 
 			_fullL = os.path.join(lpath, f)
-			#if ignore
-				#continue
+			if(self.isIgnored(_fullL)):
+				continue
 
 			if os.path.isdir(_fullL):
 				_dirTmp.append(f)
@@ -212,3 +238,24 @@ class RemoteCompileCommand(sublime_plugin.WindowCommand):
 		for d in _dirTmp:
 			self.recurrenceDir(	os.path.join(lpath,d), rpath + "/" +d )
 
+
+		
+
+	def isIgnored(self, fullPath):
+		if(len(self.arrIgnores)==0):
+			return False
+
+		for l in self.arrIgnores:
+
+			if(l[0]=="*"):
+				_name1,_ext1 = os.path.splitext(l)
+				_name2,_ext2 = os.path.splitext(fullPath)
+				#print _ext1 +"|"+ _ext2
+				if _ext1 == _ext2 :
+					return True
+			else:
+				#print l+"|"+fullPath
+				if fullPath == l :
+					return True
+
+		return False
