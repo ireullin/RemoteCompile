@@ -8,8 +8,10 @@
             "id": "remote-compile",
             "children":
             [
-                {"caption":"Upload all and compile",	"command":"remote_compile", "args":{"uploading":"true", "compiling":"true"} },
-                {"caption":"Upload all",				"command":"remote_compile", "args":{"uploading":"true", "compiling":"false"} },
+                {"caption":"Upload all & compile",		"command":"remote_compile", "args":{"uploading":"true", "compiling":"true",  "comparing":"false"} },
+                {"caption":"Upload modified & compile",	"command":"remote_compile", "args":{"uploading":"true", "compiling":"true",  "comparing":"true"} },
+				{"caption":"Upload all",				"command":"remote_compile", "args":{"uploading":"true", "compiling":"false", "comparing":"false"} },
+                {"caption":"Upload modified",			"command":"remote_compile", "args":{"uploading":"true", "compiling":"false", "comparing":"true"} },
                 {"caption":"-"},
                 {"caption":"Generate example",			"command":"generate_example"}
             ]

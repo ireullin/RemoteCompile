@@ -2,6 +2,11 @@
     {
         "keys": ["f5"],
         "command":"remote_compile",
-        "args":{"uploading":"true", "compiling":"true"} 
+        "args":{"uploading":"true", "compiling":"true",  "comparing":"true"}
+    },
+	{
+        "keys": ["ctrl+f5"],
+        "command":"remote_compile",
+        "args":{"uploading":"true", "compiling":"true",  "comparing":"false"}
     }
 ]

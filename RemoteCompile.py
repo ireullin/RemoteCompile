@@ -29,6 +29,7 @@ class RemoteCompileCommand(sublime_plugin.TextCommand):
 		return ""
 
 
+
 	def getProjectPath(self):
 		_f = sublime.active_window().active_view().file_name()
 		if(_f==None):
@@ -40,6 +41,7 @@ class RemoteCompileCommand(sublime_plugin.TextCommand):
 				return _tmpdir
 			
 		return ""
+
 
 
 	def refreshStatus(self):
@@ -93,7 +95,8 @@ class RemoteCompileCommand(sublime_plugin.TextCommand):
 
 		_f = open(filename, "r")
 		for l in _f :
-			_hash[l] = ""
+			_l = l.rstrip('\n').rstrip('\r')
+			_hash[_l] = ""
 
 		return _hash
 
@@ -138,6 +141,7 @@ class RemoteCompileCommand(sublime_plugin.TextCommand):
 
 			self.compiling	= args["compiling"]
 			self.uploading	= args["uploading"]
+			self.comparing	= args["comparing"]
 			self.packagepath= os.path.join(sublime.packages_path(), "RemoteCompile")
 
 		except:
@@ -167,17 +171,19 @@ class RemoteCompileCommand(sublime_plugin.TextCommand):
 		self.arrMD5 = []
 		self.hashMD5 = {}
 
-		if(self.uploading.lower()=="true"):
-			self.printMsg("uploading....")
 
-			_md5path = os.path.join( self.lPath, ".md5")
+		_md5path = os.path.join( self.lPath, ".md5")
+
+		if(self.comparing.lower()=="true"):
 			self.hashMD5 = self.getHashMD5(_md5path)
 
+
+		if(self.uploading.lower()=="true"):
+			self.printMsg("uploading....")
 			self.getIgnoreFile()
 			self.recurrenceDir(self.lPath, self.rPath)
 			self.generateBatch()
 			self.execPsftp()
-
 			self.writeAll( _md5path, "\n".join(self.arrMD5)  )
 
 
@@ -272,7 +278,7 @@ class RemoteCompileCommand(sublime_plugin.TextCommand):
 		_dirTmp = []
 		_files = dircache.listdir(lpath)
 		for f in _files:
-			if f[0]=="." or f=="..":
+			if(f[0]=="."): # mean ".", "..", and hidden file
 				continue
 
 			_fullL = os.path.join(lpath, f)
@@ -285,7 +291,9 @@ class RemoteCompileCommand(sublime_plugin.TextCommand):
 				_md5 = self.getFileMD5(_fullL)
 				self.arrMD5.append( _md5 )
 				
-				if(  self.hashMD5.has_key(_md5)==True  ):
+
+
+				if(  self.hashMD5.has_key(_md5)==False  ):
 					self.arrFiles.append( "put \"" + f + "\"" )
 				
 
@@ -305,11 +313,9 @@ class RemoteCompileCommand(sublime_plugin.TextCommand):
 			if(l[0]=="*"):
 				_name1,_ext1 = os.path.splitext(l)
 				_name2,_ext2 = os.path.splitext(fullPath)
-				#print _ext1 +"|"+ _ext2
 				if _ext1 == _ext2 :
 					return True
 			else:
-				#print l+"|"+fullPath
 				if fullPath == l :
 					return True
 
