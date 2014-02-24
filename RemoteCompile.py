@@ -102,10 +102,18 @@ class RemoteCompileCommand(sublime_plugin.TextCommand):
 
 
 
-	def writeAll(self, filename, contant):
-		_f = open(filename,"w")
-		_f.write(contant)
-		_f.close()
+	def readToJson(self, filename):
+		_fd = open(filename,"r")
+		_json = json.loads( _fd.read())
+		_fd.close()
+		return _json
+
+
+
+	def writeToJson(self, filename, jsonStr):
+		_fd = open(filename,"w")
+		_fd.write( json.dumps( jsonStr, indent=4 ))
+		_fd.close()
 
 
 
@@ -126,9 +134,7 @@ class RemoteCompileCommand(sublime_plugin.TextCommand):
 
 
 		try:
-			_projectfd = open(_projectFileName,"r")
-			_json = json.loads( _projectfd.read())
-			_projectfd.close()
+			_json = self.readToJson(_projectFileName)
 
 			_default	= _json["remote_compile"]["default"]
 			self.host 	= _json["remote_compile"][_default]["host"]
@@ -168,14 +174,14 @@ class RemoteCompileCommand(sublime_plugin.TextCommand):
 		self.arrSTDER = []
 		self.arrFiles = []
 		self.arrIgnores = []
-		self.arrMD5 = []
-		self.hashMD5 = {}
+		self.hMD5new = {}
+		self.hMD5old = {}
 
 
 		_md5path = os.path.join( self.lPath, ".md5")
 
-		if(self.comparing.lower()=="true"):
-			self.hashMD5 = self.getHashMD5(_md5path)
+		if(self.comparing.lower()=="true" and os.path.isfile(_md5path)==True ):
+			self.hMD5old = self.readToJson(_md5path)
 
 
 		if(self.uploading.lower()=="true"):
@@ -184,7 +190,7 @@ class RemoteCompileCommand(sublime_plugin.TextCommand):
 			self.recurrenceDir(self.lPath, self.rPath)
 			self.generateBatch()
 			self.execPsftp()
-			self.writeAll( _md5path, "\n".join(self.arrMD5)  )
+			self.writeToJson(_md5path, self.hMD5new)
 
 
 		if(self.compiling.lower()=="true"):
@@ -289,13 +295,12 @@ class RemoteCompileCommand(sublime_plugin.TextCommand):
 				_dirTmp.append(f)
 			else:
 				_md5 = self.getFileMD5(_fullL)
-				self.arrMD5.append( _md5 )
-				
+				self.hMD5new[_fullL] = _md5
 
-
-				if(  self.hashMD5.has_key(_md5)==False  ):
+				if(  self.hMD5old.has_key(_fullL)==True and self.hMD5old[_fullL]==_md5 ):
+					pass
+				else:
 					self.arrFiles.append( "put \"" + f + "\"" )
-				
 
 
 		for d in _dirTmp:

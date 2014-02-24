@@ -12,12 +12,14 @@ class GenerateExampleCommand(sublime_plugin.TextCommand):
 		_path = self.getProjectPath()
 		if(_path==""):
 			self.printMsg("this file is not in the project")
+			sublime.error_message("this file is not in the project")
 			return
 
 
 		_file = self.getProjectFile(_path)
 		if(_file==""):
 			self.printMsg("can't find file project")
+			sublime.error_message("can't find file project")
 			return
 
 		
