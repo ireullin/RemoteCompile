@@ -209,10 +209,29 @@ class RemoteCompileCommand(sublime_plugin.TextCommand):
 		_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(t))
 		
 		#_view = self.window.new_file()
-		_view = sublime.active_window().new_file()
-		_view.set_name("compile report " + _time )
+		_filePath = os.path.join(self.packagepath, "compile report")
+		
+		_f = open(_filePath,"w")
+		
+		_f.write("finished time " + _time + "\n\n")	
+
+		_f.write("====== STANDARD ERROR ======\n\n")
+		for l in self.arrSTDER:
+			_f.write(l)
+
+		_f.write("\n\n\n")
+
+		_f.write("====== STANDARD OUTPUT ======\n\n")		
+		for l in self.arrSTDIN:
+			_f.write(l)
+
+		_f.close()
+
+		_view = sublime.active_window().open_file(_filePath)
+		#_view.set_name("compile report " + _time )
 
 
+		"""
 		_edit = _view.begin_edit()
 		
 		_buff = "".join(self.arrSTDIN)
@@ -227,6 +246,8 @@ class RemoteCompileCommand(sublime_plugin.TextCommand):
 		_view.insert(_edit, 0, "====== STANDARD ERROR ======\n")
 
 		_view.end_edit(_edit)
+		"""
+
 		self.running = False
 		# sublime.status_message("finished")
 
